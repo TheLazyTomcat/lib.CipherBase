@@ -8,6 +8,10 @@ unit CipherBase;
   {$DEFINE CPU32bit}
 {$IFEND}
 
+{$IF Defined(WINDOWS) or Defined(MSWINDOWS)}
+  {$DEFINE Windows}
+{$IFEND}
+
 {$IFDEF FPC}
   {$MODE ObjFPC}
   {$MODESWITCH ClassicProcVars+}
@@ -355,6 +359,7 @@ type
 implementation
 
 uses
+{$IF not Defined(FPC) and Defined(Windows)}Windows,{$IFEND}
   StrRect, StaticMemoryStream;
 
 {$IFDEF FPC_DisableWarns}
@@ -885,8 +890,8 @@ repeat
   TempFileName := TempFileName + '.tmp';
 until not FileExists(StrToRTL(TempFileName));
 ProcessFile(FileName,TempFileName);
-If DeleteFile(FileName) then
-  RenameFile(TempFileName,FileName);
+If SysUtils.DeleteFile(FileName) then
+  SysUtils.RenameFile(TempFileName,FileName);
 end;
 
 //------------------------------------------------------------------------------
