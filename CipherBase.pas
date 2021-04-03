@@ -10,6 +10,8 @@ unit CipherBase;
 
 {$IFDEF FPC}
   {$MODE ObjFPC}
+  {$MODESWITCH ClassicProcVars+}
+  {$MODESWITCH DuplicateLocals+}
   {$DEFINE FPC_DisableWarns}
   {$MACRO ON}
 {$ENDIF}
@@ -355,6 +357,12 @@ implementation
 uses
   StrRect, StaticMemoryStream;
 
+{$IFDEF FPC_DisableWarns}
+  {$DEFINE FPCDWM}
+  {$DEFINE W4055:={$WARN 4055 OFF}} // Conversion between ordinals and pointers is not portable
+  {$DEFINE W5024:={$WARN 5024 OFF}} // Parameter "$1" not used
+{$ENDIF}
+
 {===============================================================================
 --------------------------------------------------------------------------------
                                    TCipherBase
@@ -378,7 +386,9 @@ end;
 Function OffsetPtr(Ptr: Pointer; Offset: PtrInt): Pointer;
 begin
 {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
+{$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 Result := Pointer(PtrUInt(Ptr) + PtrUInt(Offset));
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
 end;
 
@@ -439,10 +449,12 @@ end;
 
 //------------------------------------------------------------------------------
 
+{$IFDEF FPCDWM}{$PUSH}W5024{$ENDIF}
 procedure TCipherBase.SetCipherImplementation(Value: TCipherImplementation);
 begin
 // do nothing;
 end;
+{$IFDEF FPCDWM}{$POP}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1097,7 +1109,7 @@ end;
 
 procedure TBlockCipher.BlockCopy(const Src; out Dest);
 begin
-Move(Src,Dest,fBlockBytes);
+Move(Src,Addr(Dest)^,fBlockBytes);
 end;
 
 //------------------------------------------------------------------------------
@@ -1250,7 +1262,7 @@ Remainder := fBlockBytes;
 For i := 0 to Pred(Remainder div 8) do
   begin
   {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
-    UInt64(CounterPtr^) := CntrCorrectEndian(CntrCorrectEndian(UInt64(CounterPtr^)) + 1);
+    UInt64(CounterPtr^) := CntrCorrectEndian(UInt64(CntrCorrectEndian(UInt64(CounterPtr^)) + 1));
   {$IFDEF OverflowChecks}{$Q+}{$ENDIF}  
     Inc(PUInt64(CounterPtr));
     Dec(Remainder,8);
@@ -1258,7 +1270,7 @@ For i := 0 to Pred(Remainder div 8) do
 For i := 0 to Pred(Remainder div 4) do
   begin
   {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
-    UInt32(CounterPtr^) := CntrCorrectEndian(CntrCorrectEndian(UInt32(CounterPtr^)) + 1);
+    UInt32(CounterPtr^) := CntrCorrectEndian(UInt32(CntrCorrectEndian(UInt32(CounterPtr^)) + 1));
   {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
     Inc(PUInt32(CounterPtr));
     Dec(Remainder,4);
@@ -1266,7 +1278,7 @@ For i := 0 to Pred(Remainder div 4) do
 For i := 0 to Pred(Remainder div 2) do
   begin
   {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
-    UInt16(CounterPtr^) := CntrCorrectEndian(CntrCorrectEndian(UInt16(CounterPtr^)) + 1);
+    UInt16(CounterPtr^) := CntrCorrectEndian(UInt16(CntrCorrectEndian(UInt16(CounterPtr^)) + 1));
   {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
     Inc(PUInt16(CounterPtr));
     Dec(Remainder,2);
@@ -1437,7 +1449,7 @@ If InSize > 0 then
   end;
 // store output
 If Result > 0 then
-  Move(fOutBuffer^,OutBuff,Result);
+  Move(fOutBuffer^,Addr(OutBuff)^,Result);
 end;
 
 
