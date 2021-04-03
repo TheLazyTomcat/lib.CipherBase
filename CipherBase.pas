@@ -14,7 +14,7 @@
     At this moment, only base class for symmetric block cipher is implemented
     (used for Rijndael/AES), more will probably be implemented later.
 
-  Version 1.0 (2021-04-03)
+  Version 1.0.1 (2021-04-03)
 
   Last change 2021-04-03
 
@@ -378,6 +378,12 @@ type
     // utility functions
     Function RectifyBufferSize(Value: TMemSize): TMemSize; override;
   public
+    constructor CreateForEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; const InitVector; KeyBytes, BlockBytes: TMemSize); overload; virtual;
+    constructor CreateForEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; KeyBytes, BlockBytes: TMemSize); overload; virtual;
+    constructor CreateForEncryption(const Key; KeyBytes, BlockBytes: TMemSize); overload; virtual;
+    constructor CreateForDecryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; const InitVector; KeyBytes, BlockBytes: TMemSize{$IFNDEF FPC}; Dummy: Integer = 0{$ENDIF}); overload; virtual;
+    constructor CreateForDecryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; KeyBytes, BlockBytes: TMemSize{$IFNDEF FPC}; Dummy: Integer = 0{$ENDIF}); overload; virtual;
+    constructor CreateForDecryption(const Key; KeyBytes, BlockBytes: TMemSize{$IFNDEF FPC}; Dummy: Integer = 0{$ENDIF}); overload; virtual;
     procedure SetupEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; const InitVector; KeyBytes, BlockBytes: TMemSize); overload; virtual;
     procedure SetupEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; KeyBytes, BlockBytes: TMemSize); overload; virtual;
     procedure SetupEncryption(const Key; KeyBytes, BlockBytes: TMemSize); overload; virtual;
@@ -1621,6 +1627,54 @@ end;
 {-------------------------------------------------------------------------------
     TBlockCipher - public methods
 -------------------------------------------------------------------------------}
+
+constructor TBlockCipher.CreateForEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; const InitVector; KeyBytes, BlockBytes: TMemSize);
+begin
+Create;
+SetupEncryption(ModeOfOperation,Key,InitVector,KeyBytes,BlockBytes);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor TBlockCipher.CreateForEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; KeyBytes, BlockBytes: TMemSize);
+begin
+Create;
+SetupEncryption(ModeOfOperation,Key,KeyBytes,BlockBytes);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor TBlockCipher.CreateForEncryption(const Key; KeyBytes, BlockBytes: TMemSize);
+begin
+Create;
+SetupEncryption(Key,KeyBytes,BlockBytes);
+end;
+
+//------------------------------------------------------------------------------
+
+constructor TBlockCipher.CreateForDecryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; const InitVector; KeyBytes, BlockBytes: TMemSize{$IFNDEF FPC}; Dummy: Integer = 0{$ENDIF});
+begin
+Create;
+SetupDecryption(ModeOfOperation,Key,InitVector,KeyBytes,BlockBytes);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor TBlockCipher.CreateForDecryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; KeyBytes, BlockBytes: TMemSize{$IFNDEF FPC}; Dummy: Integer = 0{$ENDIF});
+begin
+Create;
+SetupDecryption(ModeOfOperation,Key,KeyBytes,BlockBytes);
+end;
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+constructor TBlockCipher.CreateForDecryption(const Key; KeyBytes, BlockBytes: TMemSize{$IFNDEF FPC}; Dummy: Integer = 0{$ENDIF});
+begin
+Create;
+SetupDecryption(Key,KeyBytes,BlockBytes);
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TBlockCipher.SetupEncryption(ModeOfOperation: TBlockCipherModeOfOperation; const Key; const InitVector; KeyBytes, BlockBytes: TMemSize);
 begin
