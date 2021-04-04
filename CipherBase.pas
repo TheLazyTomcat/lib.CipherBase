@@ -14,9 +14,9 @@
     At this moment, only base class for symmetric block cipher is implemented
     (used for Rijndael/AES), more will probably be implemented later.
 
-  Version 1.0.2 (2021-04-04)
+  Version 1.0.3 (2021-04-05)
 
-  Last change 2021-04-04
+  Last change 2021-04-05
 
   ©2021 František Milt
 
@@ -1581,7 +1581,9 @@ else
 SetModeOfOperation(ModeOfOperation);
 SetBlockBytes(BlockBytes);  // also does reallocation
 If Assigned(InitVector) then
-  Move(InitVector^,fInitVector^,fBlockBytes);
+  Move(InitVector^,fInitVector^,fBlockBytes)
+else
+  FillChar(fInitVector^,fBlockBytes,0);
 SetKeyBytes(KeyBytes);
 Move(Key^,fKey^,fKeyBytes);
 end;
