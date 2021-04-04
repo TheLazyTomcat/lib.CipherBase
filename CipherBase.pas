@@ -14,9 +14,9 @@
     At this moment, only base class for symmetric block cipher is implemented
     (used for Rijndael/AES), more will probably be implemented later.
 
-  Version 1.0.1 (2021-04-03)
+  Version 1.0.2 (2021-04-04)
 
-  Last change 2021-04-03
+  Last change 2021-04-04
 
   ©2021 František Milt
 
@@ -84,6 +84,8 @@ type
 
   TCipherImplementation = (ciPascal,ciAssembly,ciAccelerated);
 
+  TCipherImplementations = set of TCipherImplementation;
+
   ECipherException = class(Exception);
 
   ECipherInvalidState = class(ECipherException);
@@ -147,6 +149,8 @@ type
   }
     Function RectifyBufferSize(Value: TMemSize): TMemSize; virtual;
   public
+    class Function CipherImplementationsAvailable: TCipherImplementations; virtual;
+    class Function CipherImplementationsSupported: TCipherImplementations; virtual;
     class Function CipherName: String; virtual; abstract;
     constructor Create;
     destructor Destroy; override;
@@ -587,6 +591,20 @@ end;
 {-------------------------------------------------------------------------------
     TCipherBase - public methods
 -------------------------------------------------------------------------------}
+
+class Function TCipherBase.CipherImplementationsAvailable: TCipherImplementations;
+begin
+Result := [ciPascal];
+end;
+
+//------------------------------------------------------------------------------
+
+class Function TCipherBase.CipherImplementationsSupported: TCipherImplementations;
+begin
+Result := [ciPascal];
+end;
+
+//------------------------------------------------------------------------------
 
 constructor TCipherBase.Create;
 begin
