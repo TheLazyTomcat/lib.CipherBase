@@ -14,7 +14,7 @@
     At this moment, only base class for symmetric block cipher is implemented
     (used for Rijndael/AES), more will probably be implemented later.
 
-  Version 1.0.3 (2021-04-05)
+  Version 1.0.4 (2021-04-05)
 
   Last change 2021-04-05
 
@@ -781,43 +781,49 @@ else
       end;
     InitCount := Count;
     BuffSize := RectifyBufferSize(fStreamBufferSize);
-    GetMem(Buffer,BuffSize);
-    try
-      DoProgress(0.0);
-      Init;
-      repeat
-        BytesRead := InStream.Read(Buffer^,Min(BuffSize,Count));
-        // process only whole buffers
-        If TMemSize(BytesRead) >= BuffSize then
-          begin
-            BytesOutput := Update(Buffer^,BytesRead,Buffer^);
-          {
-            Note that WriteBuffer can fail on static streams, but that is a
-            desired behaviour, as static stream are not supposed to be used as
-            output.
-          }
-            OutStream.WriteBuffer(Buffer^,BytesOutput);
-            Dec(Count,BytesRead);
-            DoProgress((InitCount - Count) / InitCount);
-          end;
-      until (TMemSize(BytesRead) < BuffSize) or fBreakProcessing;
-    {
-      By now, the buffer is either empty, or contains less data than BuffSize.
-      Realloc the memory so it can fit data from Final (original data are
-      preserved).
-    }
-      If not fBreakProcessing then
-        begin
-          BuffSize := FinalOutputSize(BytesRead);
-          ReallocMem(Buffer,BuffSize);
-          // do final processing
-          Final(Buffer^,BytesRead,Buffer^);
-          OutStream.WriteBuffer(Buffer^,BuffSize);
-          DoProgress(1.0);
+    fBreakProcessing := False;
+    DoProgress(0.0);
+    If not fBreakProcessing then
+      begin
+        GetMem(Buffer,BuffSize);
+        try
+          Init;
+          BytesRead := 0;
+          If InitCount > 0 then
+            repeat
+              BytesRead := InStream.Read(Buffer^,Min(BuffSize,Count));
+              // process only whole buffers
+              If TMemSize(BytesRead) >= BuffSize then
+                begin
+                  BytesOutput := Update(Buffer^,BytesRead,Buffer^);
+                {
+                  Note that WriteBuffer can fail on static streams, but that is
+                  a desired behaviour, as static stream are not supposed to be
+                  used as output.
+                }
+                  OutStream.WriteBuffer(Buffer^,BytesOutput);
+                  Dec(Count,BytesRead);
+                  DoProgress((InitCount - Count) / InitCount);
+                end;
+            until (TMemSize(BytesRead) < BuffSize) or fBreakProcessing;
+        {
+          By now, the buffer is either empty, or contains less data than
+          BuffSize. Realloc the memory so it can fit data from Final (original
+          data are preserved).
+        }
+          If not fBreakProcessing then
+            begin
+              BuffSize := FinalOutputSize(BytesRead);
+              ReallocMem(Buffer,BuffSize);
+              // do final processing
+              Final(Buffer^,BytesRead,Buffer^);
+              OutStream.WriteBuffer(Buffer^,BuffSize);
+              DoProgress(1.0);
+            end;
+        finally
+          FreeMem(Buffer,BuffSize);
         end;
-    finally
-      FreeMem(Buffer,BuffSize);
-    end;
+      end;
   end;
 end;
 
@@ -844,41 +850,47 @@ If Assigned(Stream) then
       end;
     InitCount := Count;
     BuffSize := RectifyBufferSize(fStreamBufferSize);
-    GetMem(Buffer,BuffSize);
-    try
-      DoProgress(0.0);
-      Init;
-      WritePos := Stream.Position;
-      ReadPos := Stream.Position;
-      repeat
-        Stream.Seek(ReadPos,soBeginning);
-        BytesRead := Stream.Read(Buffer^,Min(BuffSize,Count));
-        ReadPos := ReadPos + Int64(BytesRead);
-        If TMemSize(BytesRead) >= BuffSize then
-          begin
-            BytesOutput := Update(Buffer^,BytesRead,Buffer^);
-            If BytesOutput > 0 then
-              begin
-                Stream.Seek(WritePos,soBeginning);
-                Stream.WriteBuffer(Buffer^,BytesOutput);
-                WritePos := WritePos + Int64(BytesOutput);
-              end;
-            Dec(Count,BytesRead);
-            DoProgress((InitCount - Count) / InitCount);
-          end;
-      until (TMemSize(BytesRead) < BuffSize) or fBreakProcessing;
-      If not fBreakProcessing then
-        begin
-          BuffSize := FinalOutputSize(BytesRead);
-          ReallocMem(Buffer,BuffSize);
-          Final(Buffer^,BytesRead,Buffer^);
-          Stream.Seek(WritePos,soBeginning);
-          Stream.WriteBuffer(Buffer^,BuffSize);
-          DoProgress(1.0);
-        end;
-    finally
-      FreeMem(Buffer,BuffSize);
-    end;
+    fBreakProcessing := False;
+    DoProgress(0.0);
+    If not fBreakProcessing then
+      begin
+        GetMem(Buffer,BuffSize);
+        try
+          Init;
+          WritePos := Stream.Position;
+          ReadPos := Stream.Position;
+          BytesRead := 0;
+          If InitCount > 0 then
+            repeat
+              Stream.Seek(ReadPos,soBeginning);
+              BytesRead := Stream.Read(Buffer^,Min(BuffSize,Count));
+              ReadPos := ReadPos + Int64(BytesRead);
+              If TMemSize(BytesRead) >= BuffSize then
+                begin
+                  BytesOutput := Update(Buffer^,BytesRead,Buffer^);
+                  If BytesOutput > 0 then
+                    begin
+                      Stream.Seek(WritePos,soBeginning);
+                      Stream.WriteBuffer(Buffer^,BytesOutput);
+                      WritePos := WritePos + Int64(BytesOutput);
+                    end;
+                  Dec(Count,BytesRead);
+                  DoProgress((InitCount - Count) / InitCount);
+                end;
+            until (TMemSize(BytesRead) < BuffSize) or fBreakProcessing;
+          If not fBreakProcessing then
+            begin
+              BuffSize := FinalOutputSize(BytesRead);
+              ReallocMem(Buffer,BuffSize);
+              Final(Buffer^,BytesRead,Buffer^);
+              Stream.Seek(WritePos,soBeginning);
+              Stream.WriteBuffer(Buffer^,BuffSize);
+              DoProgress(1.0);
+            end;
+        finally
+          FreeMem(Buffer,BuffSize);
+        end; 
+      end;
   end
 else raise ECipherNoStream.Create('TCipherBase.ProcessStream: Stream not assigned.');
 end;
