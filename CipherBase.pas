@@ -16,7 +16,7 @@
 
   Version 1.0.4 (2021-04-05)
 
-  Last change 2021-04-05
+  Last change 2021-04-12
 
   ©2021 František Milt
 
@@ -441,14 +441,14 @@ end;
 
 //------------------------------------------------------------------------------
 
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
 Function OffsetPtr(Ptr: Pointer; Offset: PtrInt): Pointer;
 begin
-{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
 {$IFDEF FPCDWM}{$PUSH}W4055{$ENDIF}
 Result := Pointer(PtrUInt(Ptr) + PtrUInt(Offset));
 {$IFDEF FPCDWM}{$POP}{$ENDIF}
-{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
 end;
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
@@ -1327,11 +1327,12 @@ end;
 
 //------------------------------------------------------------------------------
 
+{$IFDEF OverflowChecks}{$Q-}{$ENDIF}
 procedure TBlockCipher.BlockUpdate_CTR(const Input; out Output);
 var
   i:          Integer;
   CounterPtr: Pointer;
-  Remainder:  TMemSize;
+  Remainder:  PtrInt;
 begin
 {
   WARNING - this algorithm is sensitive for endianness.
@@ -1342,39 +1343,32 @@ BlockEncrypt(fInitVector^,fTempBlock^);
 BlockXOR(Input,fTempBlock^,Output);
 // counting...
 CounterPtr := fInitVector;
-Remainder := fBlockBytes;
+Remainder := PtrInt(fBlockBytes);
 For i := 0 to Pred(Remainder div 8) do
   begin
-  {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
     UInt64(CounterPtr^) := CntrCorrectEndian(UInt64(CntrCorrectEndian(UInt64(CounterPtr^)) + 1));
-  {$IFDEF OverflowChecks}{$Q+}{$ENDIF}  
     Inc(PUInt64(CounterPtr));
     Dec(Remainder,8);
   end;
 For i := 0 to Pred(Remainder div 4) do
   begin
-  {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
     UInt32(CounterPtr^) := CntrCorrectEndian(UInt32(CntrCorrectEndian(UInt32(CounterPtr^)) + 1));
-  {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
     Inc(PUInt32(CounterPtr));
     Dec(Remainder,4);
   end;
 For i := 0 to Pred(Remainder div 2) do
   begin
-  {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
     UInt16(CounterPtr^) := CntrCorrectEndian(UInt16(CntrCorrectEndian(UInt16(CounterPtr^)) + 1));
-  {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
     Inc(PUInt16(CounterPtr));
     Dec(Remainder,2);
   end;
 For i := 0 to Pred(Remainder) do
   begin
-  {$IFDEF OverflowChecks}{$Q-}{$ENDIF}
     UInt8(CounterPtr^) := UInt8(CounterPtr^) + 1;
-  {$IFDEF OverflowChecks}{$Q+}{$ENDIF}
     Inc(PUInt8(CounterPtr));
   end;
 end;
+{$IFDEF OverflowChecks}{$Q+}{$ENDIF}
 
 //------------------------------------------------------------------------------
 
