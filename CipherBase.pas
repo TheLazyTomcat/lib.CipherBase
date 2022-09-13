@@ -16,9 +16,9 @@
 
   Version 1.0.4 (2021-04-05)
 
-  Last change 2021-04-12
+  Last change 2022-09-13
 
-  ©2021 František Milt
+  ©2021-2022 František Milt
 
   Contacts:
     František Milt: frantisek.milt@gmail.com
@@ -75,6 +75,16 @@ uses
   AuxTypes, AuxClasses;
 
 {===============================================================================
+    Libray-specific exceptions
+===============================================================================}
+type
+  ECipherException = class(Exception);
+
+  ECipherInvalidState = class(ECipherException);
+  ECipherInvalidValue = class(ECipherException);
+  ECipherNoStream     = class(ECipherException);
+
+{===============================================================================
 --------------------------------------------------------------------------------
                                    TCipherBase
 --------------------------------------------------------------------------------
@@ -86,26 +96,21 @@ type
 
   TCipherImplementations = set of TCipherImplementation;
 
-  ECipherException = class(Exception);
-
-  ECipherInvalidState = class(ECipherException);
-  ECipherInvalidValue = class(ECipherException);
-  ECipherNoStream     = class(ECipherException);  
-
 {===============================================================================
     TCipherBase - class declaration
 ===============================================================================}
 type
   TCipherBase = class(TCustomObject)
   protected
-    fMode:              TCipherMode;  // encrypt/decrypt
-    fStreamBufferSize:  TMemSize;
-    fBufferProgress:    Boolean;
-    fProcessedBytes:    TMemSize;
-    fBreakProcessing:   Boolean;
-    fInitialized:       Boolean;
-    fFinalized:         Boolean;
-    fOnProgress:        TFloatEvent;
+    fMode:                TCipherMode;  // encrypt/decrypt
+    fStreamBufferSize:    TMemSize;
+    fBufferProgress:      Boolean;
+    fProcessedBytes:      TMemSize;
+    fBreakProcessing:     Boolean;
+    fInitialized:         Boolean;
+    fFinalized:           Boolean;
+    fOnProgressEvent:     TFloatEvent;
+    fOnProgressCallback:  TFloatCallback;
     // getters, setters
     Function GetCipherImplementation: TCipherImplementation; virtual;
     procedure SetCipherImplementation(Value: TCipherImplementation); virtual;
@@ -303,8 +308,12 @@ type
     ...).
 
     Progress value is normalized, meaning it is reported in the range <0,1>.
+
+    If both event and callback are assigned, then only the event is called.
   }
-    property OnProgress: TFloatEvent read fOnProgress write fOnProgress;
+    property OnProgress: TFloatEvent read fOnProgressEvent write fOnProgressEvent;
+    property OnProgressEvent: TFloatEvent read fOnProgressEvent write fOnProgressEvent;
+    property OnProgressCallback: TFloatCallback read fOnProgressCallback write fOnProgressCallback;
   end;
 
 {===============================================================================
@@ -549,8 +558,10 @@ end;
 
 procedure TCipherBase.DoProgress(Progress: Double);
 begin
-If Assigned(fOnProgress) then
-  fOnProgress(Self,Progress);
+If Assigned(fOnProgressEvent) then
+  fOnProgressEvent(Self,Progress)
+else If Assigned(fOnProgressCallback) then
+  fOnProgressCallback(Self,Progress);
 end;
 
 //------------------------------------------------------------------------------
@@ -564,7 +575,8 @@ fProcessedBytes := 0;
 fBreakProcessing := False;
 fInitialized := False;
 fFinalized := False;
-fOnProgress := nil;
+fOnProgressEvent := nil;
+fOnProgressCallback := nil;
 end;
 
 //------------------------------------------------------------------------------
