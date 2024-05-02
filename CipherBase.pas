@@ -14,9 +14,9 @@
     At this moment, only base class for symmetric block cipher is implemented
     (used for Rijndael/AES), more will probably be implemented later.
 
-  Version 1.0.6 (2024-05-03)
+  Version 1.0.6 (2024-05-02)
 
-  Last change 2024-05-03
+  Last change 2024-05-02
 
   ©2021-2024 František Milt
 
@@ -63,7 +63,7 @@ unit CipherBase;
 }
 {$IF Defined(CipherBase_UseAuxExceptions)}
   {$DEFINE UseAuxExceptions}
-{$IFEND}{$DEFINE UseAuxExceptions}
+{$IFEND}
 
 //------------------------------------------------------------------------------
 
